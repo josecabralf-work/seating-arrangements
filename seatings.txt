@@ -1,50 +1,50 @@
 Round 1:
 Table 1:
-  - Alice Johnson
-  - David Martinez
-  - Henry Wilson
-  - Isabella Clark
-  - Samuel Evans
+  - Maria Robinson (Product, Lead, Brazil)
+  - Olivia Hall (Finance, Mid, USA)
+  - Paul Allen (Marketing, Senior, UK)
+  - Quinn Scott (Sales, Junior, Canada)
+  - Rachel Adams (Engineering, Manager, Japan)
 Table 2:
-  - Franklin Harris
-  - Jack Turner
-  - Karen Lewis
-  - Maria Robinson
-  - Olivia Hall
+  - Franklin Harris (Finance, Senior, Germany)
+  - Henry Wilson (Engineering, Lead, UK)
+  - Jack Turner (Marketing, Mid, Canada)
+  - Karen Lewis (Sales, Manager, USA)
+  - Samuel Evans (Product, Junior, India)
 Table 3:
-  - Brian Smith
-  - Emily Brown
-  - Grace Kim
-  - Liam Walker
-  - Rachel Adams
+  - Alice Johnson (Engineering, Senior, USA)
+  - Catherine Lee (Product, Mid, Canada)
+  - David Martinez (Sales, Lead, Brazil)
+  - Emily Brown (Engineering, Junior, USA)
+  - Nathan Young (HR, Junior, India)
 Table 4:
-  - Catherine Lee
-  - Nathan Young
-  - Paul Allen
-  - Quinn Scott
+  - Brian Smith (Marketing, Manager, UK)
+  - Grace Kim (HR, Manager, Japan)
+  - Isabella Clark (Product, Senior, USA)
+  - Liam Walker (Engineering, Mid, Germany)
 
 Round 2:
 Table 1:
-  - Franklin Harris
-  - Liam Walker
-  - Olivia Hall
-  - Rachel Adams
-  - Samuel Evans
+  - Isabella Clark (Product, Senior, USA)
+  - Jack Turner (Marketing, Mid, Canada)
+  - Nathan Young (HR, Junior, India)
+  - Rachel Adams (Engineering, Manager, Japan)
 Table 2:
-  - Alice Johnson
-  - Brian Smith
-  - Grace Kim
-  - Maria Robinson
-  - Nathan Young
+  - David Martinez (Sales, Lead, Brazil)
+  - Liam Walker (Engineering, Mid, Germany)
+  - Olivia Hall (Finance, Mid, USA)
+  - Paul Allen (Marketing, Senior, UK)
+  - Samuel Evans (Product, Junior, India)
 Table 3:
-  - Emily Brown
-  - Henry Wilson
-  - Jack Turner
-  - Paul Allen
-  - Quinn Scott
+  - Catherine Lee (Product, Mid, Canada)
+  - Franklin Harris (Finance, Senior, Germany)
+  - Grace Kim (HR, Manager, Japan)
+  - Henry Wilson (Engineering, Lead, UK)
+  - Quinn Scott (Sales, Junior, Canada)
 Table 4:
-  - Catherine Lee
-  - David Martinez
-  - Isabella Clark
-  - Karen Lewis
+  - Alice Johnson (Engineering, Senior, USA)
+  - Brian Smith (Marketing, Manager, UK)
+  - Emily Brown (Engineering, Junior, USA)
+  - Karen Lewis (Sales, Manager, USA)
+  - Maria Robinson (Product, Lead, Brazil)
 
