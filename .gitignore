@@ -205,3 +205,9 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+real.txt
+output.txt
+
+# Go build output
+/bin/
