@@ -37,7 +37,7 @@ func main() {
 	peopleFile := envStr("PEOPLE", "people.txt")
 	tables := envInt("TABLES", 30)
 	seats := envInt("SEATS", 8)
-	rounds := envInt("ROUNDS", 3)
+	days := envInt("DAYS", 3)
 	attempts := envInt("ATTEMPTS", 50)
 	workers := envInt("WORKERS", runtime.NumCPU())
 	output := envStr("OUTPUT", "seatings.txt")
@@ -72,7 +72,7 @@ func main() {
 			seed2 := uint64(idx)*2862933555777941757 + 3037000493
 			rng := rand.New(rand.NewPCG(seed1, seed2))
 
-			seatings := arrange.CreateSittings(ds, tables, seats, rounds, avgPair, rng)
+			seatings := arrange.CreateSittings(ds, tables, seats, days, avgPair, rng)
 			seatings, u, w := arrange.ImproveBySwaps(seatings, ds)
 			n := atomic.AddInt64(&done, 1)
 			fmt.Printf("Attempt %d/%d done: %d unique, %d weighted\n", n, attempts, u, w)

@@ -1,8 +1,8 @@
 package arrange
 
-// scoreState tracks how many rounds each pair appears in. The total
+// scoreState tracks how many days each pair appears in. The total
 // (unique, weighted) only depends on whether each pair appears at all,
-// so swap deltas are O(seats) instead of O(rounds*tables*seats^2).
+// so swap deltas are O(seats) instead of O(days*tables*seats^2).
 type scoreState struct {
 	pairCount [][]int // upper-triangular: index with i < j
 	unique    int
@@ -55,7 +55,7 @@ func (s *scoreState) changePair(x, y, delta int, ds *Dataset) {
 	}
 }
 
-// applySwap swaps person at ti[ai] with person at tj[bj] (same round) and
+// applySwap swaps person at ti[ai] with person at tj[bj] (same day) and
 // updates the score state incrementally. Returns the previous (unique, weighted).
 func (s *scoreState) applySwap(ti, tj []int, ai, bj int, ds *Dataset) (int, int) {
 	a := ti[ai]
@@ -100,8 +100,8 @@ func (s *scoreState) revertSwap(ti, tj []int, ai, bj int, ds *Dataset) {
 	}
 }
 
-// ImproveBySwaps hill-climbs: swap pairs of people between tables in the same
-// round whenever doing so improves (unique, weighted) lexicographically.
+// ImproveBySwaps hill-climbs: swap pairs of people between tables on the same
+// day whenever doing so improves (unique, weighted) lexicographically.
 func ImproveBySwaps(seatings Seatings, ds *Dataset) (Seatings, int, int) {
 	state := newScoreState(seatings, ds)
 	for {

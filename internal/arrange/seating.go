@@ -6,12 +6,12 @@ import (
 	"math/rand/v2"
 )
 
-// Seatings: [round][table] -> slice of person IDs.
+// Seatings: [day][table] -> slice of person IDs.
 type Seatings [][][]int
 
-func CreateSittings(ds *Dataset, tables, seats, rounds int, avgPair float64, rng *rand.Rand) Seatings {
+func CreateSittings(ds *Dataset, tables, seats, days int, avgPair float64, rng *rand.Rand) Seatings {
 	n := ds.N
-	if n == 0 || tables <= 0 || seats <= 0 || rounds <= 0 {
+	if n == 0 || tables <= 0 || seats <= 0 || days <= 0 {
 		return nil
 	}
 	if n > tables*seats {
@@ -25,12 +25,17 @@ func CreateSittings(ds *Dataset, tables, seats, rounds int, avgPair float64, rng
 		tables = needed
 	}
 
+	// Balance constraint: every table ends up at floor or ceil size, so no
+	// table is left with a tiny straggler count.
+	floorSize := n / tables
+	ceilSize := (n + tables - 1) / tables
+
 	connections := make([][]bool, n)
 	for i := range connections {
 		connections[i] = make([]bool, n)
 	}
 
-	seatings := make(Seatings, rounds)
+	seatings := make(Seatings, days)
 	for r := range seatings {
 		seatings[r] = make([][]int, tables)
 		for t := range seatings[r] {
@@ -43,13 +48,30 @@ func CreateSittings(ds *Dataset, tables, seats, rounds int, avgPair float64, rng
 		order[i] = i
 	}
 
-	for r := 0; r < rounds; r++ {
+	for r := 0; r < days; r++ {
 		rng.Shuffle(n, func(i, j int) { order[i], order[j] = order[j], order[i] })
 		for _, p := range order {
+			// If any table is still below the floor size, restrict
+			// candidates to those tables — every table must hit the floor
+			// before any table is allowed to grow toward the ceiling.
+			anyBelowFloor := false
+			for t := 0; t < tables; t++ {
+				if len(seatings[r][t]) < floorSize {
+					anyBelowFloor = true
+					break
+				}
+			}
+			limit := ceilSize
+			if anyBelowFloor {
+				limit = floorSize
+			}
 			bestScore := math.Inf(-1)
 			bestTable := -1
 			for t := 0; t < tables; t++ {
 				seated := seatings[r][t]
+				if len(seated) >= limit {
+					continue
+				}
 				rem := seats - len(seated)
 				if rem <= 0 {
 					continue
