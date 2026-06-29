@@ -1,102 +1,90 @@
-# Induction Seatings Arrangements
+# Induction Seating Arrangements
 
-This repository provides a Go program to generate optimal seating arrangements for group events, such as induction ceremonies, where the goal is to maximize **unique** connections between participants across multiple days while also **boosting the value** of each connection by diversity of department, role, and country.
+Generate multi-day seating plans that maximise how many different people meet
+each other.
 
-## Project layout
+Given a list of people, the tool produces a seating chart for each day that
+maximises the number of **unique pairwise connections** (people who share a table
+at least once across the whole event), then breaks ties by favouring **diverse**
+tables.
 
-```txt
-.
-├── Makefile
-├── go.mod
-├── .env                  # Runtime configuration
-├── people.txt            # Default input file
-├── cmd/arrange/          # Entry point (main package)
-└── internal/arrange/     # Library: dataset, seating, swap, output
-```
+## How it works
 
-## Features
+The objective is lexicographic:
 
-- Distributes people across a specified number of tables and seats per table for several days.
-- Maximizes the number of unique connections (i.e., ensures participants sit with as many different people as possible).
-- Weights each connection by how different the two participants are, in the order **department > role > country**.
-- Runs many independent attempts in parallel across all available CPU cores and keeps the best.
-- Outputs the best seating arrangement found.
-- Easy configuration via environment variables.
+1. **Unique connections**: the count of distinct person-pairs that share a table
+   on any day. This is the primary score.
+2. **Weighted diversity**: among arrangements with equal unique connections,
+   prefer pairings across different attributes. Each pair contributes a base value
+   plus bonuses for differing department, role, and country (see weights below).
 
-## How It Works
+Diversity weights ([internal/arrange/dataset.go](internal/arrange/dataset.go)):
 
-1. **Input**: Reads a CSV list of people from a text file (default: `people.txt`) with columns `name, department, role, country`.
-2. **Parameters**: Number of tables, seats per table, days, attempts, and worker count can be set via environment variables.
-3. **Scoring**: Every unique pairing is worth a large base value (so raw unique connections remain the primary goal). Added on top are diversity bonuses:
-   - Different **department** → +100
-   - Different **role** → +10
-   - Different **country** → +1
+| Attribute  | Weight | Notes                                    |
+| ---------- | -----: | ---------------------------------------- |
+| Connection |  1000  | base value for any new unique pairing    |
+| Department |   100  | bonus if the two people differ           |
+| Role       |    10  | bonus if the two people differ           |
+| Country    |     1  | bonus if the two people differ           |
 
-   The greedy placement uses this value on each seat assignment, and runs are ranked lexicographically by `(unique_connections, weighted_value)`.
-4. **Algorithm**: Two-stage per attempt.
-   - **Greedy placement**: for each day, shuffles participants and, for each person, picks the table that maximizes the sum of immediate diversity-weighted value with existing seat-mates (only counting *new* connections) plus the expected value of the remaining empty seats.
-   - **Swap local search**: after greedy, iteratively swaps pairs of people between tables on the same day whenever doing so strictly improves `(unique_connections, weighted_value)`. Continues until no improving swap exists.
+The base connection value (1000) dominates all diversity bonuses combined, so the
+solver never trades away a new connection to gain diversity. Diversity only breaks
+ties.
 
-   Swap evaluation is done incrementally via a per-pair occurrence counter, so each candidate swap is `O(seats)` instead of a full rescore.
-5. **Parallelism**: `ATTEMPTS` independent attempts are dispatched across `WORKERS` goroutines (one per CPU by default). Each goroutine has its own RNG.
-6. **Output**: Writes the best seating arrangement to `seatings.txt` and prints the number of unique connections along with the total weighted value.
+### Algorithm
+
+1. **Greedy construction** ([seating.go](internal/arrange/seating.go)): for each
+   day, people are shuffled and seated one at a time at the table that gives the
+   best immediate-plus-expected score. Tables are kept balanced: every table must
+   reach the floor size before any table grows toward the ceiling, so people are
+   spread evenly rather than piling onto a few tables.
+2. **Hill climbing** ([swap.go](internal/arrange/swap.go)): pairs of people are
+   swapped between tables on the same day whenever the swap improves the
+   `(unique, weighted)` score. Swap deltas are computed incrementally in O(seats),
+   not by rescoring the whole plan.
+3. **Parallel attempts** ([cmd/arrange/main.go](cmd/arrange/main.go)): many
+   independent attempts run concurrently across worker goroutines, each with its
+   own random seed. The best result wins.
+
+## Requirements
+
+- Go 1.22 or newer
 
 ## Usage
 
-### 1. Prepare the People List
+```bash
+make build      # builds bin/arrange
+make run        # builds, loads .env, and runs
+```
 
-Create a `people.txt` file in the same directory. The first line is a CSV header; one participant per subsequent line:
+Or run directly:
 
-```txt
+```bash
+go build -o bin/arrange ./cmd/arrange
+PEOPLE=people.txt TABLES=30 SEATS=8 DAYS=3 ./bin/arrange
+```
+
+`make run` sources a local `.env` file for configuration before running.
+
+### Input
+
+A CSV formatted file (default `people.txt`) with a header row. Recognised columns:
+`name`, `department`, `role`, `country`. Only `name` is required; missing columns
+are treated as empty and simply contribute no diversity bonus.
+
+```csv
 name,department,role,country
 Alice Johnson,Engineering,Senior,USA
 Brian Smith,Marketing,Manager,UK
 Catherine Lee,Product,Mid,Canada
-...
 ```
 
-All four columns are required. Use any consistent labels you like — the program only cares whether two values are equal or different.
+### Output
 
-### 2. Run
+A text file (default `seatings.txt`) listing the tables for each day, with the
+people seated at each, sorted by name:
 
-The Makefile provides three targets:
-
-```bash
-make help    # Show available targets
-make build   # Build the binary into bin/arrange
-make run     # Build and run, loading variables from .env
 ```
-
-Or invoke Go directly:
-
-```bash
-go run ./cmd/arrange
-```
-
-#### Optional: Set Parameters
-
-Override the defaults using environment variables:
-
-- `PEOPLE`: Path to the people list file (default: `people.txt`)
-- `TABLES`: Number of tables (default: 30)
-- `SEATS`: Number of seats per table (default: 8)
-- `DAYS`: Number of days (default: 3)
-- `ATTEMPTS`: Number of random attempts to try (default: 50)
-- `WORKERS`: Number of attempts to run in parallel (default: number of CPU cores)
-
-Example:
-
-```bash
-TABLES=10 SEATS=5 DAYS=3 ATTEMPTS=500 go run .
-```
-
-### 3. View the Output
-
-The program generates a `seatings.txt` file with the seating arrangements for each day and table. It also prints the number of unique connections and the total weighted value achieved.
-
-## Example Output (`seatings.txt`)
-
-```txt
 Day 1:
 Table 1:
   - Alice Johnson
@@ -104,25 +92,30 @@ Table 1:
   ...
 ```
 
-## Tuning the Weights
+The program also prints per-attempt progress and a final summary to stdout:
 
-If department/role/country should be weighted differently for your event, edit the constants at the top of `internal/arrange/dataset.go`:
-
-```go
-const (
-    BaseConnectionValue = 1000
-    WeightDept          = 100
-    WeightRole          = 10
-    WeightCountry       = 1
-)
+```
+Best arrangement: 412 unique connections, weighted value 458300. (1.23s over 50 attempts, 8 workers)
 ```
 
-Keep `BaseConnectionValue` strictly larger than the sum of all diversity weights if you want unique-pair count to stay the dominant objective.
+## Configuration
 
-## Requirements
+All options are set via environment variables (read by
+[cmd/arrange/main.go](cmd/arrange/main.go)):
 
-- Go 1.22+
+| Variable   | Default            | Description                                   |
+| ---------- | ------------------ | --------------------------------------------- |
+| `PEOPLE`   | `people.txt`       | Path to the input CSV                         |
+| `TABLES`   | `30`               | Maximum number of tables per day              |
+| `SEATS`    | `8`                | Seats per table                               |
+| `DAYS`     | `3`                | Number of days/rounds to schedule             |
+| `ATTEMPTS` | `50`               | Independent attempts; best result is kept     |
+| `WORKERS`  | number of CPUs     | Concurrent worker goroutines                  |
+| `OUTPUT`   | `seatings.txt`     | Path to the output file                       |
+
+If `TABLES` exceeds what's needed to seat everyone given `SEATS`, the count is
+reduced automatically. The program requires `TABLES × SEATS ≥ number of people`.
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+[MIT](LICENSE)
