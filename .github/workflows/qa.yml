@@ -1,0 +1,45 @@
+name: Seating QA - Lint & Test
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+# Cancel if another workflow is run for the same PR. This reduces runner load.
+concurrency:
+  group: "seating-qa-${{ github.event.pull_request.number || github.sha }}"
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint, vet and run unit tests
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        run: |
+          sudo snap install --channel=6/stable lxd
+          sudo snap install --classic workshop
+
+      - name: Fix LXD container network routing
+        if: runner.environment != 'self-hosted'
+        run: |
+          sudo iptables -P FORWARD ACCEPT
+          sudo sysctl net.ipv4.conf.all.forwarding=1
+
+      - name: Launch workshop
+        run: workshop launch --verbose
+
+      - name: Run linters and vetters
+        run: workshop run arrange make lint
+
+      - name: Run tests
+        run: workshop run arrange make test
